@@ -22,8 +22,9 @@ webcam = cv2.VideoCapture("http://192.168.0.5:4747/mjpegfeed")
 # upper = np.array([177, 255, 255])
 
 ### B GREEN
-lower = np.array([55, 32, 101])
+lower = np.array([50, 30, 60])
 upper = np.array([80, 255, 255])
+
 
 ret, frame = webcam.read()
 
@@ -35,16 +36,23 @@ overlay = np.zeros(frame.shape, frame.dtype)
 while True:
     ret, frame = webcam.read()
     frame = cv2.flip(frame, 1)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
 
-    hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv_img = cv2.cvtColor(cv2.GaussianBlur(frame, (7, 7), 0), 
+        cv2.COLOR_BGR2HLS)
+
     mask = cv2.inRange(hsv_img, lower, upper)
 
-    colorMask = cv2.bitwise_and(maskImg, maskImg, mask = mask)
+    t_mask = cv2.bitwise_xor(mask, thresh, mask = mask) 
+
+    colorMask = cv2.bitwise_and(maskImg, maskImg, mask = t_mask)
     cv2.addWeighted(colorMask, 1, overlay, 1, 0, overlay)
     cv2.addWeighted(overlay, 1, frame, 1, 0, frame)
     cv2.imshow("Paint", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        # cv2.imwrite("Image.png", frame)
         break
 
 webcam.release()
